@@ -9,11 +9,11 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
+import java.util.Properties;
 import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -29,8 +29,6 @@ import gt.research.mht.MHTNode;
 import gt.research.xacml.PDP_LIB;
 import gt.research.xacml.test.XacmlTest;
 
-import java.lang.Runtime;
-
 public class DistributedSystemsManager {
 	
 	public static boolean alreadyRun;
@@ -41,7 +39,7 @@ public class DistributedSystemsManager {
 	private MHTNode original_node;
 	private boolean hashesVerified;
 
-	private int group = -1;
+	private int numCellGroups = 0;
 	private LinkedList<DataEntity> worksheet;
 	private LinkedList<DataEntity> attributes;
 	private LinkedList<DataEntity> averages;
@@ -59,32 +57,34 @@ public class DistributedSystemsManager {
 	private File policyFile;
 	private File certificateFile;
 
-	public static String WORKSHEET_XML = "WORKSHEET";
-	public static final String ROW_XML = "ROW";
-	public static final String COL_XML = "COL";
-	public static final String DATA_XML = "DATA";
-	public static final String TAG_XML = "TAG";
+	private static String WORKSHEET_XML = "WORKSHEET";
+	private static final String ROW_XML = "ROW";
+	private static final String COL_XML = "COL";
+	private static final String DATA_XML = "DATA";
+	private static final String TAG_XML = "TAG";
 
 	private static final String TAG = "DISTRIBUTED_SYSTEMS_MANAGER";
 
-	private FileManager fileManager;
-
-	public DistributedSystemsManager(String username) {
-		//Log.d(TAG, "Manager for user " + username + " initialized");
-		//Log.d(TAG, "Data file path: " + path);
-		this.username = username;
+	public DistributedSystemsManager(Properties prop) {
+		this.username = prop.getProperty("username");
 		pdp = new PDP_LIB();
-		fileManager = new FileManager();
 		nodeBuffers = new Vector<MHTNode>();
 		worksheet = new LinkedList<DataEntity>();
 		attributes = new LinkedList<DataEntity>();
 		averages = new LinkedList<DataEntity>();
-		dataFile = new File(FileManager.file_data);
-		policyFile = new File(FileManager.file_policy);
-		certificateFile =  new File(FileManager.res_dir + File.separator + username + ".xml");
+
+        try {
+            dataFile = new File(new File(".").getCanonicalPath() + prop.getProperty("dataFileDir"));
+            policyFile = new File(new File(".").getCanonicalPath() + prop.getProperty("policyFileDir"));
+            certificateFile = new File(new File(".").getCanonicalPath() + prop.getProperty("certificateFileDir"));
+        } catch (IOException e){
+            e.printStackTrace();
+        }
 	}
 
-	public String update() {
+	public void update() {
+
+        // Build the node from our data file
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
@@ -92,28 +92,42 @@ public class DistributedSystemsManager {
 			InputStream stream = new FileInputStream(dataFile);
 			InputSource inputsource = new InputSource(stream);
 			Document doc = docBuilder.parse(inputsource);
+
 			node = new MHTNode(doc.getDocumentElement());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		clear();
-		original_node = node;
+
+		original_node = node; // Why is this here?
+
 		InputStream policyFileInputStream;
 		InputStream certificateFileInputStream;
+
 		try {
+
 			policyFileInputStream = new FileInputStream(policyFile);
 			certificateFileInputStream = new FileInputStream(certificateFile);
+
 			policyString = IOUtils.toString(policyFileInputStream, "UTF-8");
 			certXML = IOUtils.toString(certificateFileInputStream, "UTF-8");
+
+            // Initialize PDP
 			PDPinit(policyString, certXML);
+
+            // Verify that the data has not been tempered with
 			hashesVerified = verifyHashes();
-			findChild(node);
+
+            // Load data into some data structures
+            // Traverse down the hash tree to get to the data nodes
+			findChildren(node);
+
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		return generate();
 	}
 
 	public boolean verifyHashes() {
@@ -123,102 +137,126 @@ public class DistributedSystemsManager {
 	public void PDPinit(String policyString, String certXML) {
 		if (pdp != null) {
 			pdp.InitializePDP(policyString, certXML);
-		} else {
-			//System.out.println("Failed to init PDP due to null point exception");
 		}
 	}
 
-	public String returnDataFromName(String name, String desiredInfoTag) {
-		for (int j = 0; j < worksheet.size(); j++) {
-			for (int k = 0; k < worksheet.get(j).tags.size(); k++) {
-				CharSequence cs = desiredInfoTag;
-				if (worksheet.get(j).tags.get(k).contains(cs) && worksheet.get(j).tags.get(k).contains(name)){
-					return worksheet.get(j).value;
-				}
-			}
-		}
-		return "";
-	}
 
-	public void findChild(MHTNode node) {
-		if((node.getChildren().size() != 0)){
-			findChild(node.getChildren().elementAt(0));
-			findChild(node.getChildren().elementAt(1));
+	public void findChildren(MHTNode currNode) {
+
+        // Keep recursively traversing down the node if there are children
+		if ((currNode.getChildren().size() != 0)) {
+			findChildren(currNode.getChildren().elementAt(0));
+			findChildren(currNode.getChildren().elementAt(1));
 		}
+
+        // Extract data out of the leaf nodes
 		try {
-			byte[] nodeByteArray = node.getData().getBytes("UTF-8");
-			String childNodeData = new String(nodeByteArray, Charset.forName("UTF-8"));
-			if(!childNodeData.isEmpty())
-				extractDataFromString(childNodeData);
+			byte[] nodeByteArray = currNode.getData().getBytes("UTF-8");
+			String rawString = new String(nodeByteArray, Charset.forName("UTF-8"));
+
+			if (!rawString.isEmpty()) {
+			    System.out.println("Found: " + rawString);
+                parseCellGroup(rawString);
+            }
+
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void extractDataFromString(String string) {
+	public void parseCellGroup(String rawString) {
+
 		DocumentBuilder db;
+
 		try {
+		    // Parse the string as a document
 			db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			InputSource is = new InputSource();
-			is.setCharacterStream(new StringReader(string));
-			Document doc;
-			try {
-				doc = db.parse(is);
-				if ("CELLGROUP".equals(doc.getDocumentElement().getNodeName())) {
-					if (doc.getDocumentElement().hasChildNodes()) {
-						group++;
-						NodeList list = doc.getElementsByTagName("CELL");
-						for (int j = 0; j < list.getLength(); j++) {
-							Element element = (Element) list.item(j);
-							int row = Integer.parseInt(element.getElementsByTagName(ROW_XML).item(0).getChildNodes().item(0).getNodeValue());
-							int col = Integer.parseInt(element.getElementsByTagName(COL_XML).item(0).getChildNodes().item(0).getNodeValue());
-							maxRow = Math.max(row, maxRow);
-							String w = element.getElementsByTagName(WORKSHEET_XML).item(0).getChildNodes().item(0).getNodeValue();
-							String type;
-							String value;
-							try {
-								type = "float";
-								value = "" + Float.parseFloat(element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue());
-							} catch (Exception f) {
-								type = "string";
-								value = element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue();
-							}
+			is.setCharacterStream(new StringReader(rawString));
+			Document doc = db.parse(is);
 
-							DataEntity dataEntity = new DataEntity(type,value,w,row,col,group);
-							boolean hasAverageTag = false;
-							for (int m = 0; m < element.getElementsByTagName(TAG_XML).getLength(); m++) {
-								String newTag = element.getElementsByTagName(TAG_XML).item(m).getChildNodes().item(0).getNodeValue();
-								if(newTag.equals("Average")){
-									hasAverageTag = true;
-								}
-								dataEntity.tags.add(newTag);
-								if(m == 0){
-									dataEntity.isVisible = requestForAccess(newTag);
-								}
-								else {
-									dataEntity.isVisible = dataEntity.isVisible & requestForAccess(newTag);
-								}
-							}
-
-							if (!hasAverageTag) {
-								worksheet.add(dataEntity);
-								if (worksheet.getLast().row == 0) {
-									dataEntity.isVisible = requestForAccess(dataEntity.value);
-								    attributes.add(dataEntity);
-								}
-							}
-						}
-					}
-				}
-				return;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} catch (ParserConfigurationException e1) {
-			e1.printStackTrace();
+            // Check if the document's root node is of type "CellGroup"
+            if ("CELLGROUP".equals(doc.getDocumentElement().getNodeName())) {
+                // If there are child nodes from CellGroup, keep traversing the document
+                if (doc.getDocumentElement().hasChildNodes()) {
+                    numCellGroups++;
+                    NodeList list = doc.getElementsByTagName("CELL");
+                    for (int j = 0; j < list.getLength(); j++) {
+                        Element element = (Element) list.item(j);
+                        parseCell(element);
+                    }
+                }
+            }
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
+	public void parseCell(Element element) {
+
+	    // Get row,col coords
+        int row = Integer.parseInt(element.getElementsByTagName(ROW_XML)
+                .item(0)
+                .getChildNodes()
+                .item(0)
+                .getNodeValue());
+        int col = Integer.parseInt(element.getElementsByTagName(COL_XML)
+                .item(0)
+                .getChildNodes()
+                .item(0)
+                .getNodeValue());
+
+        // Keep tracking the maximum row
+        maxRow = Math.max(row, maxRow);
+
+        // Which worksheet this data entity is in
+        String wrkshtNum = element.getElementsByTagName(WORKSHEET_XML).item(0).getChildNodes().item(0).getNodeValue();
+        String type;
+        String value;
+
+        try {
+            type = "float";
+            Float value = Float.parseFloat(element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue());
+            DataEntity<Float> dataEntity = new DataEntity(type, value, wrkshtNum, row, col, numCellGroups - 1);
+
+        } catch (Exception f) {
+            type = "string";
+            value = element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue();
+        }
+
+
+        boolean hasAverageTag = false;
+        for (int m = 0; m < element.getElementsByTagName(TAG_XML).getLength(); m++) {
+            String newTag = element.getElementsByTagName(TAG_XML).item(m).getChildNodes().item(0).getNodeValue();
+            if(newTag.equals("Average")){
+                hasAverageTag = true;
+            }
+            dataEntity.tags.add(newTag);
+            if(m == 0){
+                dataEntity.isVisible = requestForAccess(newTag);
+            }
+            else {
+                dataEntity.isVisible = dataEntity.isVisible & requestForAccess(newTag);
+            }
+        }
+
+        if (!hasAverageTag) {
+            worksheet.add(dataEntity);
+            if (worksheet.getLast().row == 0) {
+                dataEntity.isVisible = requestForAccess(dataEntity.value);
+                attributes.add(dataEntity);
+            }
+        }
+
+    }
+
+    public void parseTags() {
+
+    }
+
+    public DataEntity constructDataEntity() {
+
+    }
 
 	public boolean requestForAccess(String tagname) {
 		if (username == null) {
@@ -259,9 +297,11 @@ public class DistributedSystemsManager {
 
 	public void saveChanges(boolean logout) {
 		if (nodeBuffers.size() == 0) {
+		    /*
 			if (logout) {
 				fileManager.encrypt();
 			}
+			*/
 			System.out.println("Empty node buffers, unable to save.");
 		} else {
 			MHTNode session_node = createParentNode(nodeBuffers);
@@ -270,12 +310,18 @@ public class DistributedSystemsManager {
 			trees_to_merge.add(original_node);
 			node = new MHTNode(trees_to_merge);
 			node.GenerateHashes();
+
+
+            //TODO: Implement signing
 			//node = signRoot(node, userName);
-			fileManager.updateFile(dataFile, node.ExportAsXML().getBytes());
-			fileManager.updateFile(policyFile,policyString.getBytes());
+
+
+			FileManager.updateFile(dataFile, node.ExportAsXML().getBytes());
+			FileManager.updateFile(policyFile,policyString.getBytes());
+
 
 			if (logout) {
-				fileManager.encrypt();
+				//fileManager.encrypt();
 			} else {
 				update();
 			}
@@ -283,7 +329,7 @@ public class DistributedSystemsManager {
 	}
 
 	public void export(File exportTo) { 
-		fileManager.updateFile(exportTo, original_node.ExportAsXML().getBytes());
+		FileManager.updateFile(exportTo, original_node.ExportAsXML().getBytes());
 	}
 
 	public void clear() {
@@ -320,19 +366,8 @@ public class DistributedSystemsManager {
 	}
 
 
-	public String generate() {
-		/*
-		try {
-			Runtime.getRuntime().exec("su");
-			Runtime.getRuntime().exec("touch documents/" + username + ".csv");
-			Runtime.getRuntime().exec("chmod 0777 documents/" + username + ".csv");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}*/
+	public String exportAsCSV() {
 		File file = new File("sdcard" + File.separator + "Download" + File.separator + "." + username + ".csv");
-		/*System.out.println("setWritable: " + file.setWritable(true));
-		System.out.println("setReadable: " + file.setReadable(true));
-		System.out.println("setExecutable: " + file.setExecutable(true));*/
 		String content = "";
 		int tags = 0;
 		for (int i = 0; i < worksheet.size(); i++) {

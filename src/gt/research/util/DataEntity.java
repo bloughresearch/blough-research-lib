@@ -2,10 +2,10 @@ package gt.research.util;
 
 import java.util.LinkedList;
 
-public class DataEntity {
+public class DataEntity<V> {
 
 	public String type;
-	public String value;
+	public V value;
 	public String worksheet;
 
 	public int row, col, group;
@@ -13,7 +13,7 @@ public class DataEntity {
 
 	public LinkedList<String> tags = new LinkedList<String>();
 
-	public DataEntity(String type, String value, String worksheet, int row, int col, int group){
+	public DataEntity(String type, V value, String worksheet, int row, int col, int group){
 		this.type = type;
 		this.value = value;
 		this.worksheet = worksheet;

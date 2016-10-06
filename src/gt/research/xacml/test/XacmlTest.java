@@ -1,55 +1,26 @@
 package gt.research.xacml.test;
 
-import gt.research.mht.MHTNode;
-import gt.research.xacml.DistributedPolicyFinder;
-import gt.research.xacml.PDP_LIB;
-import gt.research.xacml.SampleAttributeFinderModule;
-
 import java.io.ByteArrayInputStream;
-import java.io.Console;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 //import java.lang.management.ManagementFactory;
 //import java.lang.management.ThreadMXBean;
-import java.nio.ByteBuffer;
 // import java.nio.charset.Charset;
 // import java.nio.file.Files;
 // import java.nio.file.Path;
 // import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.wso2.balana.Balana;
-import org.wso2.balana.PDP;
-import org.wso2.balana.PDPConfig;
 import org.wso2.balana.ParsingException;
 import org.wso2.balana.ctx.AbstractResult;
-import org.wso2.balana.ctx.AttributeAssignment;
 import org.wso2.balana.ctx.ResponseCtx;
-import org.wso2.balana.finder.AttributeFinder;
-import org.wso2.balana.finder.AttributeFinderModule;
-import org.wso2.balana.finder.PolicyFinder;
-import org.wso2.balana.finder.PolicyFinderModule;
 import org.wso2.balana.finder.impl.FileBasedPolicyFinderModule;
-import org.wso2.balana.xacml3.Advice;
 
 public class XacmlTest {
 

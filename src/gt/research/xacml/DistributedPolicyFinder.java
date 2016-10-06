@@ -1,21 +1,13 @@
 package gt.research.xacml;
-import gt.research.mht.MHTNode;
 
 import java.io.ByteArrayInputStream;
-import java.io.Console;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,18 +15,16 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.wso2.balana.*;
 import org.wso2.balana.combine.PolicyCombiningAlgorithm;
-import org.wso2.balana.ctx.AbstractResult;
-import org.wso2.balana.ctx.AttributeAssignment;
 import org.wso2.balana.ctx.EvaluationCtx;
-import org.wso2.balana.ctx.ResponseCtx;
 import org.wso2.balana.ctx.Status;
 import org.wso2.balana.finder.*;
 import org.wso2.balana.finder.impl.*;
-import org.wso2.balana.xacml3.Advice;
+
 public class DistributedPolicyFinder extends PolicyFinderModule{
 	PolicyFinderModule p;
 

@@ -12,15 +12,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 //import com.sun.xacml.PDP;
 import org.wso2.balana.*;
-import org.wso2.balana.ctx.AbstractResult;
-import org.wso2.balana.ctx.AttributeAssignment;
-import org.wso2.balana.ctx.ResponseCtx;
 import org.wso2.balana.finder.AttributeFinder;
 import org.wso2.balana.finder.AttributeFinderModule;
 import org.wso2.balana.finder.PolicyFinder;
 import org.wso2.balana.finder.PolicyFinderModule;
 import org.wso2.balana.finder.impl.FileBasedPolicyFinderModule;
-import org.wso2.balana.xacml3.Advice;
 
 public class PDP_LIB {
 
