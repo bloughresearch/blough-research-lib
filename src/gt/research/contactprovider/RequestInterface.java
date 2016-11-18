@@ -1,8 +1,6 @@
 package gt.research.contactprovider;
 
 import gt.research.mht.MHTNode;
-import gt.research.util.DistributedSystemsManager;
-import gt.research.util.FileManager;
 import gt.research.xacml.PDP_LIB;
 import gt.research.xacml.test.XacmlTest;
 import org.apache.commons.io.IOUtils;
@@ -12,10 +10,8 @@ import org.wso2.balana.ctx.ResponseCtx;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Properties;
 import java.util.Vector;
 
 /**
@@ -23,11 +19,11 @@ import java.util.Vector;
  * Demo for Dr. Blough
  *
  */
-public class Test {
+public class RequestInterface {
 
     private PDP_LIB pdp;
 
-    public Test(File policyFile, File certFile) {
+    public RequestInterface(File policyFile, File certFile) {
         pdp = new PDP_LIB();
         try {
             pdp.InitializePDP(IOUtils.toString(new FileInputStream(policyFile), "UTF-8"),
@@ -60,9 +56,9 @@ public class Test {
             System.out.println(key + "->" + pkgMap.get(key));
         }
 
-        HashMap<String, Test> parsers = new HashMap<>();
+        HashMap<String, RequestInterface> parsers = new HashMap<>();
         for (String app: apps) {
-            Test test = new Test(new File("data/app-policy/app-policy.xml"), new File("data/app-policy/" + app + ".xml"));
+            RequestInterface test = new RequestInterface(new File("data/app-policy/app-policy.xml"), new File("data/app-policy/" + app + ".xml"));
             parsers.put(app, test);
         }
 

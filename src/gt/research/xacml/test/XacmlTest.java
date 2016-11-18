@@ -186,7 +186,7 @@ public class XacmlTest {
 
 
     	Vector<ExcelCell> cell_list = new Vector<ExcelCell>();
-    	cell_list.add(new ExcelCell(0,0,"","Test Sheet Header"));
+    	cell_list.add(new ExcelCell(0,0,"","RequestInterface Sheet Header"));
     	cell_list.add(new ExcelCell(0,1,"",3.14f));
     	cell_list.add(new ExcelCell(0,2,"",777.0f));
     	cell_list.add(new ExcelCell(0,3,"",0.0f));
@@ -209,7 +209,7 @@ public class XacmlTest {
     	String leaf3 = ExcelCell.createCellGroup(cell_list);
 
     	cell_list = new Vector<ExcelCell>();
-    	cell_list.add(new ExcelCell(0,0,"Worksheet2","Test Sheet 2"));
+    	cell_list.add(new ExcelCell(0,0,"Worksheet2","RequestInterface Sheet 2"));
     	cell_list.add(new ExcelCell(1,0,"Worksheet2",1.3f));
     	String leaf4 = ExcelCell.createCellGroup(cell_list);
 

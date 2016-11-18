@@ -30,7 +30,7 @@ public class MHTNode {
 	public static void main(String[] args)
 	{
 
-		byte[] check_hash = Crypto_Utils.hashString("Test String this should work in Java and C#");
+		byte[] check_hash = Crypto_Utils.hashString("RequestInterface String this should work in Java and C#");
 
 		try
 		{
