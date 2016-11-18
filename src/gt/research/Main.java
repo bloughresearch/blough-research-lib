@@ -22,6 +22,7 @@ public class Main {
             prop.load(in);
             in.close();
             DistributedSystemsManager m = new DistributedSystemsManager(prop);
+            m.parseDataFile();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

@@ -58,8 +58,8 @@ public class MHTNode {
 
 	Vector<MHTNode> children;
 	X509Certificate source;
-	String data;
-	byte[] hash;
+	public String data;
+	public byte[] hash;
 
 	public byte[] getNodeHash()
     {
@@ -135,9 +135,11 @@ public class MHTNode {
             }
         }
 
-
     }
 
+    public MHTNode(String data) {
+        this.data = data;
+    }
     public MHTNode(Vector<MHTNode> leaves)
     {
     	children = new Vector<MHTNode>();

@@ -65,6 +65,7 @@ public class DistributedSystemsManager {
 
 	private static final String TAG = "DISTRIBUTED_SYSTEMS_MANAGER";
 
+
 	public DistributedSystemsManager(Properties prop) {
 		this.username = prop.getProperty("username");
 		pdp = new PDP_LIB();
@@ -74,7 +75,7 @@ public class DistributedSystemsManager {
 		averages = new LinkedList<DataEntity>();
 
         try {
-            dataFile = new File(new File(".").getCanonicalPath() + prop.getProperty("dataFileDir"));
+			dataFile = new File(new File(".").getCanonicalPath() + prop.getProperty("dataFileDir"));
             policyFile = new File(new File(".").getCanonicalPath() + prop.getProperty("policyFileDir"));
             certificateFile = new File(new File(".").getCanonicalPath() + prop.getProperty("certificateFileDir"));
         } catch (IOException e){
@@ -82,8 +83,7 @@ public class DistributedSystemsManager {
         }
 	}
 
-	public void update() {
-
+	public void parseDataFile() {
         // Build the node from our data file
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
@@ -113,7 +113,6 @@ public class DistributedSystemsManager {
 			policyString = IOUtils.toString(policyFileInputStream, "UTF-8");
 			certXML = IOUtils.toString(certificateFileInputStream, "UTF-8");
 
-            // Initialize PDP
 			PDPinit(policyString, certXML);
 
             // Verify that the data has not been tempered with
@@ -130,18 +129,16 @@ public class DistributedSystemsManager {
 		}
 	}
 
-	public boolean verifyHashes() {
+
+	public void PDPinit(String policyString, String certXML) {
+		pdp.InitializePDP(policyString, certXML);
+	}
+
+	private boolean verifyHashes() {
 		return node != null && node.VerifyHashes();
 	}
 
-	public void PDPinit(String policyString, String certXML) {
-		if (pdp != null) {
-			pdp.InitializePDP(policyString, certXML);
-		}
-	}
-
-
-	public void findChildren(MHTNode currNode) {
+	private void findChildren(MHTNode currNode) {
 
         // Keep recursively traversing down the node if there are children
 		if ((currNode.getChildren().size() != 0)) {
@@ -164,7 +161,7 @@ public class DistributedSystemsManager {
 		}
 	}
 
-	public void parseCellGroup(String rawString) {
+	private void parseCellGroup(String rawString) {
 
 		DocumentBuilder db;
 
@@ -192,7 +189,7 @@ public class DistributedSystemsManager {
 		}
 	}
 
-	public void parseCell(Element element) {
+	private void parseCell(Element element) {
 
 	    // Get row,col coords
         int row = Integer.parseInt(element.getElementsByTagName(ROW_XML)
@@ -216,14 +213,13 @@ public class DistributedSystemsManager {
 
         try {
             type = "float";
-            Float value = Float.parseFloat(element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue());
-            DataEntity<Float> dataEntity = new DataEntity(type, value, wrkshtNum, row, col, numCellGroups - 1);
-
+            value = "" + Float.parseFloat(element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue());
         } catch (Exception f) {
             type = "string";
             value = element.getElementsByTagName(DATA_XML).item(0).getChildNodes().item(0).getNodeValue();
         }
 
+        DataEntity<String> dataEntity = new DataEntity(type, value, wrkshtNum, row, col, numCellGroups - 1);
 
         boolean hasAverageTag = false;
         for (int m = 0; m < element.getElementsByTagName(TAG_XML).getLength(); m++) {
@@ -247,14 +243,6 @@ public class DistributedSystemsManager {
                 attributes.add(dataEntity);
             }
         }
-
-    }
-
-    public void parseTags() {
-
-    }
-
-    public DataEntity constructDataEntity() {
 
     }
 
@@ -323,7 +311,7 @@ public class DistributedSystemsManager {
 			if (logout) {
 				//fileManager.encrypt();
 			} else {
-				update();
+				parseDataFile();
 			}
 		}
 	}

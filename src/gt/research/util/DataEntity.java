@@ -33,4 +33,9 @@ public class DataEntity<V> {
 		xml = xml + "</CELL></CELLGROUP>";
 		return xml;
 	}
+
+	public LinkedList<String> getTags() {
+	    return tags;
+    }
+
 }
